@@ -34,6 +34,6 @@
     "typescript": "^5.7.2"
   },
   "bin": {
-    "iconfont-mcp": "./dist/index.js"
+    "icon-font-mcp": "./dist/index.js"
   }
 }

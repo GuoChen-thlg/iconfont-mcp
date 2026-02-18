@@ -1,4 +1,4 @@
-# iconfont-mcp
+# icon-font-mcp
 
 MCP server for Iconfont (iconfont.cn) - Search, download, and manage icons from China's largest icon library.
 
@@ -11,13 +11,13 @@ MCP server for Iconfont (iconfont.cn) - Search, download, and manage icons from 
 ## Installation
 
 ```bash
-npm install -g iconfont-mcp
+npm install -g @thlg/icon-font-mcp
 ```
 
 Or use npx directly:
 
 ```bash
-npx iconfont-mcp
+npx @thlg/icon-font-mcp
 ```
 
 ## MCP Configuration
@@ -31,7 +31,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "iconfont": {
       "command": "npx",
-      "args": ["iconfont-mcp"]
+      "args": ["@thlg/icon-font-mcp"]
     }
   }
 }
