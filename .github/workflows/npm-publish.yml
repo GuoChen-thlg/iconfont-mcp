@@ -11,6 +11,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -23,4 +24,4 @@ jobs:
 
       - run: npm run build
 
-      - run: npm publish --access public --registry https://npm.pkg.github.com
+      - run: npm publish --access public
