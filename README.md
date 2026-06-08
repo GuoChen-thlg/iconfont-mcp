@@ -10,14 +10,27 @@ MCP server for Iconfont (iconfont.cn) - Search, download, and manage icons from 
 
 ## Installation
 
+### Global install
+
 ```bash
-npm install -g @thlg/icon-font-mcp
+npm install guochen-thlg/icon-font-mcp -g
 ```
 
-Or use npx directly:
+### Run with npx
 
 ```bash
-npx @thlg/icon-font-mcp
+npx -y guochen-thlg/iconfont-mcp
+```
+
+### Local run
+
+Clone the repo and run directly:
+
+```bash
+git clone https://github.com/GuoChen-thlg/iconfont-mcp.git
+cd iconfont-mcp
+pnpm install && pnpm build
+node dist/index.js
 ```
 
 ## MCP Configuration
@@ -31,7 +44,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "iconfont": {
       "command": "npx",
-      "args": ["@thlg/icon-font-mcp"]
+      "args": ["-y", "guochen-thlg/iconfont-mcp"]
     }
   }
 }
@@ -70,6 +83,7 @@ Download SVG data for a specific icon.
 
 **Parameters:**
 - `icon_id` (string, required): Icon ID from search results
+- `project_id` (string, optional): Project ID for icons in private projects
 - `output_path` (string, optional): Directory to save SVG file
 - `filename` (string, optional): Filename without extension
 - `response_format` (string, optional): 'markdown' or 'json' (default: markdown)
@@ -79,6 +93,46 @@ Download SVG data for a specific icon.
 List your Iconfont projects (requires authentication).
 
 **Parameters:**
+- `cookie` (string, optional): Iconfont cookie override
+- `response_format` (string, optional): 'markdown' or 'json' (default: markdown)
+
+### iconfont_login
+
+Login to Iconfont by providing a cookie.
+
+**Parameters:**
+- `cookie` (string, required): The `EGG_SESS_ICONFONT` cookie value
+
+### iconfont_auto_login
+
+Auto login by opening a browser for manual authentication.
+
+**Parameters:** None (opens a browser window automatically)
+
+### iconfont_check_login
+
+Check if you are currently logged in with a valid cookie.
+
+**Parameters:** None
+
+### iconfont_get_project_detail
+
+Get detailed info about a specific project.
+
+**Parameters:**
+- `pid` (string, required): Project ID
+- `cookie` (string, optional): Iconfont cookie override
+- `response_format` (string, optional): 'markdown' or 'json' (default: markdown)
+
+### iconfont_project_search_icons
+
+Search icons within a specific project.
+
+**Parameters:**
+- `pid` (string, required): Project ID
+- `keyword` (string, required): Search keyword
+- `cookie` (string, optional): Iconfont cookie override
+- `page` (number, optional): Page number (default: 1)
 - `response_format` (string, optional): 'markdown' or 'json' (default: markdown)
 
 ## Development

@@ -15,6 +15,7 @@ export class IconfontService {
   private loggedIn: boolean = false;
   private projectDetailCache: Map<string, CacheEntry<IconfontProjectDetail>> = new Map();
   private cacheMaxAge: number = 5 * 60 * 1000;
+  private iconCache: Map<string, IconfontIcon> = new Map();
 
   constructor(cookie?: string) {
     this.cookie = cookie || process.env.ICONFONT_COOKIE || "";
@@ -59,6 +60,16 @@ export class IconfontService {
       loggedIn: this.loggedIn,
       hasCookie: !!this.cookie
     };
+  }
+
+  private cacheIcon(icon: IconfontIcon): void {
+    if (icon.icon_id && icon.show_svg) {
+      this.iconCache.set(icon.icon_id, icon);
+    }
+  }
+
+  getCachedIcon(iconId: string): IconfontIcon | undefined {
+    return this.iconCache.get(iconId);
   }
 
   async searchIcons(
@@ -109,6 +120,8 @@ export class IconfontService {
         tags: icon.tags || []
       }));
 
+      icons.forEach((i: IconfontIcon) => this.cacheIcon(i));
+
       return {
         total: data.data.total || 0,
         page,
@@ -128,7 +141,16 @@ export class IconfontService {
     }
   }
 
-  async getIconDetail(iconId: string): Promise<IconfontIcon | null> {
+  async getIconDetail(iconId: string, projectId?: string): Promise<IconfontIcon | null> {
+    const cached = this.iconCache.get(iconId);
+    if (cached) {
+      return cached;
+    }
+
+    if (projectId) {
+      return this.getProjectIconDetail(iconId, projectId);
+    }
+
     try {
       const response = await axios.get(
         `${ICONFONT_API_BASE}/icon/${iconId}.json`,
@@ -139,12 +161,17 @@ export class IconfontService {
       );
 
       const data = response.data;
+
+      if (data && data.error_code === "LOGIN REQUIRED") {
+        return null;
+      }
+
       if (!data || !data.data) {
         return null;
       }
 
       const icon = data.data;
-      return {
+      const result: IconfontIcon = {
         icon_id: icon.id?.toString() || icon.icon_id?.toString() || "",
         name: icon.name || "",
         show_svg: icon.show_svg || "",
@@ -153,8 +180,59 @@ export class IconfontService {
         unicode: icon.unicode,
         tags: icon.tags || []
       };
+      this.cacheIcon(result);
+      return result;
     } catch (error) {
       throw new Error(`Failed to get icon details: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+
+  private async getProjectIconDetail(iconId: string, projectId: string): Promise<IconfontIcon | null> {
+    const pageSize = 100;
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      try {
+        const result = await this.getProjectIcons(projectId, page, pageSize);
+        const icon = result.icons.find(i => i.icon_id === iconId);
+        if (icon) {
+          this.cacheIcon(icon);
+          return icon;
+        }
+        hasMore = result.icons.length === pageSize;
+        page++;
+      } catch (error) {
+        throw new Error(`Failed to get icon from project: ${error instanceof Error ? error.message : "Unknown error"}`);
+      }
+    }
+
+    return null;
+  }
+
+  async verifyLogin(): Promise<boolean> {
+    if (!this.cookie) {
+      this.loggedIn = false;
+      return false;
+    }
+
+    try {
+      const response = await axios.get(
+        `${ICONFONT_API_BASE}/user/myprojects.json`,
+        {
+          params: { page: 1, t: Date.now() },
+          headers: this.getHeaders(),
+          timeout: 15000
+        }
+      );
+
+      const data = response.data;
+      const valid = data && data.data && (data.data.ownProjects || data.data.corpProjects);
+      this.loggedIn = !!valid;
+      return this.loggedIn;
+    } catch (error) {
+      this.loggedIn = false;
+      return false;
     }
   }
 
@@ -235,6 +313,8 @@ export class IconfontService {
         unicode: icon.unicode,
         tags: icon.tags || []
       }));
+
+      icons.forEach((i: IconfontIcon) => this.cacheIcon(i));
 
       return {
         total: data.data.total || 0,
@@ -357,6 +437,8 @@ export class IconfontService {
         unicode: icon.unicode,
         tags: icon.tags || []
       }));
+
+      icons.forEach((i: IconfontIcon) => this.cacheIcon(i));
 
       return {
         total: data.data.total || 0,

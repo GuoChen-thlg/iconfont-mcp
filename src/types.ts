@@ -44,6 +44,9 @@ export type IconfontSearchInput = z.infer<typeof IconfontSearchSchema>;
 export const IconfontDownloadSchema = z.object({
   icon_id: z.string()
     .describe("The icon ID to download (from search results)"),
+  project_id: z.string()
+    .optional()
+    .describe("Project ID (required for icons in private projects; can be obtained from iconfont_list_projects)"),
   output_path: z.string()
     .optional()
     .describe("Directory path to save the SVG file (defaults to current directory)"),

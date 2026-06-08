@@ -180,9 +180,11 @@ Examples:
       description: `Download SVG data for a specific icon from Iconfont.
 
 This tool retrieves the SVG content for an icon and optionally saves it to a file. The icon_id can be obtained from the search results.
+For icons in private projects, you must provide the project_id parameter.
 
 Args:
   - icon_id (string, required): The icon ID to download (from search results)
+  - project_id (string, optional): Project ID for private project icons (from iconfont_list_projects)
   - output_path (string, optional): Directory path to save the SVG file
   - filename (string, optional): Filename for the downloaded SVG (without extension)
 
@@ -192,6 +194,7 @@ Returns:
 
 Examples:
   - Use when: "Download the home icon" -> icon_id from search results
+  - Use when: "Download from a private project" -> icon_id, project_id
   - Use when: "Save to specific folder" -> output_path="./src/icons"`,
       inputSchema: IconfontDownloadSchema,
       annotations: {
@@ -203,13 +206,19 @@ Examples:
     },
     async (params: IconfontDownloadInput) => {
       try {
-        const icon = await service.getIconDetail(params.icon_id);
+        const icon = await service.getIconDetail(params.icon_id, params.project_id);
         
         if (!icon) {
+          let message = `Error: Icon with ID "${params.icon_id}" not found.`;
+          if (!params.project_id && service.isLoggedIn()) {
+            message += " If this icon is in a private project, try specifying the project_id parameter.";
+          } else if (!service.isLoggedIn()) {
+            message += " Public icon may require login. If this icon is in a private project, login via iconfont_login and specify the project_id.";
+          }
           return {
             content: [{
               type: "text",
-              text: `Error: Icon with ID "${params.icon_id}" not found.`
+              text: message
             }]
           };
         }
@@ -229,16 +238,18 @@ Examples:
           icon_id: icon.icon_id,
           name: icon.name,
           svg: icon.svg || icon.show_svg,
-          saved_to: savedPath
+          saved_to: savedPath,
+          project_id: params.project_id
         };
 
         let textContent: string;
+        const projectInfo = params.project_id ? ` (project: ${params.project_id})` : "";
         if (params.response_format === ResponseFormat.JSON) {
           textContent = JSON.stringify(output, null, 2);
         } else {
           textContent = savedPath 
-            ? `Icon "${icon.name}" (ID: ${icon.icon_id}) saved to: ${savedPath}`
-            : `Icon "${icon.name}" (ID: ${icon.icon_id})`;
+            ? `Icon "${icon.name}" (ID: ${icon.icon_id})${projectInfo} saved to: ${savedPath}`
+            : `Icon "${icon.name}" (ID: ${icon.icon_id})${projectInfo}`;
         }
 
         return {
@@ -456,16 +467,16 @@ Returns:
       }
     },
     async () => {
-      const status = service.getLoginStatus();
+      const loggedIn = await service.verifyLogin();
       
       return {
         content: [{
           type: "text",
-          text: status.loggedIn 
+          text: loggedIn 
             ? "✅ Currently logged in to Iconfont"
-            : "❌ Not logged in. Use iconfont_login or iconfont_auto_login to authenticate."
+            : "❌ Not logged in or cookie expired. Use iconfont_login or iconfont_auto_login to authenticate."
         }],
-        structuredContent: status
+        structuredContent: { loggedIn, hasCookie: !!service.getCookie() }
       };
     }
   );
