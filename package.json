@@ -1,6 +1,6 @@
 {
   "name": "@guochen-thlg/icon-font-mcp",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "MCP server for Iconfont - Search, download, and manage icons from iconfont.cn",
   "type": "module",
   "main": "dist/index.js",
